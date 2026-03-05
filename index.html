@@ -1,358 +1,233 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Salt Whistle Logbook</title>
-
+<meta charset="UTF-8">
+<title>Salt Whistle Maintenance</title>
 <style>
-
 body{
 font-family:Arial;
-background:#0c1d2a;
-color:white;
-margin:0;
-text-align:center;
+background:#f4f6f7;
+margin:20px;
 }
 
-header{
-background:#102c40;
-padding:18px;
-font-size:26px;
-font-weight:bold;
+h1{
+color:#1a5276;
 }
 
 button{
-width:90%;
-padding:15px;
-margin:8px;
-font-size:18px;
-border-radius:10px;
+padding:10px;
+margin:5px;
 border:none;
-background:#2e6fa3;
+background:#1a5276;
 color:white;
+border-radius:6px;
 }
 
 .card{
-background:#13364d;
-margin:12px;
+background:white;
 padding:15px;
-border-radius:10px;
-}
-
-.section{
-display:none;
+margin:10px 0;
+border-radius:8px;
+box-shadow:0 2px 4px rgba(0,0,0,.1);
 }
 
 input{
-width:80%;
-padding:10px;
-margin:5px;
-border-radius:6px;
-border:none;
+padding:6px;
+margin:4px;
 }
-
-textarea{
-width:80%;
-padding:10px;
-margin:5px;
-border-radius:6px;
-border:none;
-}
-
 </style>
 </head>
 
 <body>
 
-<header>⚓ Salt Whistle Logbook</header>
+<h1>Salt Whistle</h1>
 
 <div class="card">
-
-2003 Catalina 34 MKII<br>
-Hull ID CYTP1651B303<br>
-Owners Rob Simonds & Dawn Wilson<br><br>
-
+Owner: Rob Simonds & Dawn Wilson<br>
+Boat: Catalina 34 MKII<br>
+Hull: CYTP1651B303<br>
 Engine: Universal M35B<br>
-Hours: <span id="hours"></span>
-
+Engine Hours: <span id="hours">2013</span>
 </div>
 
-<button onclick="show('dashboard')">Dashboard</button>
-<button onclick="show('maintenance')">Maintenance</button>
-<button onclick="show('parts')">Spare Parts</button>
-<button onclick="show('systems')">Systems</button>
-<button onclick="show('reports')">Reports</button>
+<button onclick="showDashboard()">Dashboard</button>
+<button onclick="showSystems()">Systems</button>
+<button onclick="showMaintenance()">Maintenance</button>
+<button onclick="showSpares()">Spares</button>
+<button onclick="showAddMaintenance()">Add Service</button>
+<button onclick="exportPDF()">Export Log</button>
 
-<div id="dashboard" class="section">
-
-<div class="card">
-
-<h3>Engine Hour Tracker</h3>
-
-<button onclick="addHours(.1)">+0.1 hr</button>
-<button onclick="addHours(1)">+1 hr</button>
-<button onclick="addHours(5)">+5 hr</button>
-
-</div>
-
-<div class="card">
-
-<h3>Maintenance Alerts</h3>
-
-<div id="alerts"></div>
-
-</div>
-
-</div>
-
-<div id="maintenance" class="section">
-
-<div class="card">
-
-<h3>Add Maintenance Entry</h3>
-
-<input id="work" placeholder="Work performed"><br>
-<input id="location" placeholder="Location"><br>
-<input id="mechanic" placeholder="Mechanic"><br>
-<textarea id="notes" placeholder="Notes"></textarea>
-
-<button onclick="addMaintenance()">Save Entry</button>
-
-</div>
-
-<div class="card">
-
-<h3>Maintenance Log</h3>
-
-<div id="log"></div>
-
-</div>
-
-</div>
-
-<div id="parts" class="section">
-
-<div class="card">
-
-<h3>Add Spare Part</h3>
-
-<input id="part" placeholder="Part name"><br>
-<input id="qty" placeholder="Quantity"><br>
-<input id="locationPart" placeholder="Storage location"><br>
-
-<button onclick="addPart()">Add</button>
-
-</div>
-
-<div class="card">
-
-<h3>Inventory</h3>
-
-<div id="partsList"></div>
-
-</div>
-
-</div>
-
-<div id="systems" class="section">
-
-<div class="card">
-
-<h3>Engine</h3>
-
-Universal M35B<br>
-Oil Filter Baldwin B179<br>
-Fuel Filter Baldwin BF940
-
-</div>
-
-<div class="card">
-
-<h3>Electrical</h3>
-
-2x 200W Solar Panels<br>
-Victron SmartSolar MPPT 100/30<br>
-Balmar XT-DT-170-J10 Alternator<br>
-Wakespeed WS500 Regulator<br>
-2000W Inverter
-
-</div>
-
-<div class="card">
-
-<h3>Plumbing</h3>
-
-Raritan PHII Compact Head<br>
-Shurflo 3200 Macerator<br>
-Jabsco Par-Max 3 Water Pump
-
-</div>
-
-</div>
-
-<div id="reports" class="section">
-
-<div class="card">
-
-<h3>Maintenance Report</h3>
-
-<button onclick="exportReport()">Generate Report</button>
-
-</div>
-
-</div>
+<div id="content"></div>
 
 <script>
 
-let hours = localStorage.getItem("hours") || 2013
-document.getElementById("hours").innerText = hours
+let systems = [
+"Universal M35B Engine",
+"Balmar XT-DT-170-J10 Alternator",
+"Wakespeed WS500 Regulator",
+"Victron MPPT 100/30",
+"Victron Blue Smart Charger",
+"2000W On Demand Inverter",
+"Maxwell 500 Windlass",
+"Oberdorfer Raw Water Pump",
+"Raritan PHII Head",
+"Jabsco 1950 Bilge Pump",
+"Jabsco Par-Max 3 Shower Pump",
+"Seaward 6 Gallon Water Heater",
+"Garmin InReach Mini 2",
+"ACR EPIRB",
+"Lifesling 2",
+"Highfield 250AL Dinghy",
+"Mercury 3.3HP Outboard"
+]
 
-function addHours(h){
+let maintenance = JSON.parse(localStorage.getItem("maintenance")) || [
 
-hours = parseFloat(hours)+h
-localStorage.setItem("hours",hours)
+{
+date:"Nov 3 2025",
+service:"Oil & Filter Change",
+location:"Mazatlan",
+mechanic:"Rafi"
+},
 
-document.getElementById("hours").innerText=hours.toFixed(1)
+{
+date:"Jun 28 2025",
+service:"Engine Zinc Replacement",
+location:"Boat",
+mechanic:"Rob"
+},
 
-checkAlerts()
+{
+date:"Feb 18 2026",
+service:"Heat Exchanger Replacement & Coolant Change",
+location:"Boat Yard",
+mechanic:"Rob"
+}
+
+]
+
+let spares = JSON.parse(localStorage.getItem("spares")) || [
+
+{name:"Baldwin B179 Oil Filter",location:"Engine locker"},
+{name:"Baldwin BF940 Fuel Filter",location:"Engine locker"},
+{name:"Raw Water Impeller",location:"Engine spares bin"},
+{name:"Alternator Belt",location:"Tool locker"},
+{name:"Engine Zinc",location:"Parts bin"}
+
+]
+
+function saveData(){
+localStorage.setItem("maintenance",JSON.stringify(maintenance))
+localStorage.setItem("spares",JSON.stringify(spares))
+}
+
+function showDashboard(){
+
+let html="<div class='card'><b>Maintenance Status</b><br><br>"
+
+html+="Oil Change Completed Nov 2025<br>"
+html+="Coolant Change Feb 2026<br>"
+html+="Engine Hours: "+document.getElementById("hours").innerText
+
+html+="</div>"
+
+document.getElementById("content").innerHTML=html
 
 }
 
-function show(section){
+function showSystems(){
 
-document.querySelectorAll(".section")
-.forEach(s=>s.style.display="none")
+let html="<div class='card'><b>Boat Systems</b><br><br>"
 
-document.getElementById(section).style.display="block"
+systems.forEach(s=>{
+html+=s+"<br>"
+})
+
+html+="</div>"
+
+document.getElementById("content").innerHTML=html
 
 }
 
-show("dashboard")
+function showMaintenance(){
+
+let html="<div class='card'><b>Maintenance Log</b><br><br>"
+
+maintenance.forEach(m=>{
+html+=m.date+" — "+m.service+" ("+m.location+" / "+m.mechanic+")<br>"
+})
+
+html+="</div>"
+
+document.getElementById("content").innerHTML=html
+
+}
+
+function showSpares(){
+
+let html="<div class='card'><b>Spares Inventory</b><br><br>"
+
+spares.forEach(s=>{
+html+=s.name+" — "+s.location+"<br>"
+})
+
+html+="</div>"
+
+document.getElementById("content").innerHTML=html
+
+}
+
+function showAddMaintenance(){
+
+let html="<div class='card'>"
+
+html+="Date:<br><input id='d'><br>"
+html+="Service:<br><input id='s'><br>"
+html+="Location:<br><input id='l'><br>"
+html+="Mechanic:<br><input id='m'><br>"
+
+html+="<br><button onclick='addMaintenance()'>Save</button>"
+
+html+="</div>"
+
+document.getElementById("content").innerHTML=html
+
+}
 
 function addMaintenance(){
 
 let entry={
+date:document.getElementById("d").value,
+service:document.getElementById("s").value,
+location:document.getElementById("l").value,
+mechanic:document.getElementById("m").value
+}
 
-date:new Date().toLocaleDateString(),
-hours:hours,
-work:document.getElementById("work").value,
-location:document.getElementById("location").value,
-mechanic:document.getElementById("mechanic").value,
-notes:document.getElementById("notes").value
+maintenance.unshift(entry)
+
+saveData()
+
+showMaintenance()
 
 }
 
-let log=JSON.parse(localStorage.getItem("log")||"[]")
+function exportPDF(){
 
-log.unshift(entry)
+let text="Salt Whistle Maintenance Log\n\n"
 
-localStorage.setItem("log",JSON.stringify(log))
-
-displayLog()
-
-}
-
-function displayLog(){
-
-let log=JSON.parse(localStorage.getItem("log")||"[]")
-
-let html=""
-
-log.forEach(e=>{
-
-html+=`<p><b>${e.date}</b> | ${e.hours} hrs<br>
-${e.work}<br>
-${e.location} | ${e.mechanic}<br>
-${e.notes}</p>`
-
+maintenance.forEach(m=>{
+text+=m.date+" - "+m.service+" ("+m.location+" / "+m.mechanic+")\n"
 })
 
-document.getElementById("log").innerHTML=html
+let blob=new Blob([text],{type:"text/plain"})
+let a=document.createElement("a")
+a.href=URL.createObjectURL(blob)
+a.download="salt-whistle-maintenance.txt"
+a.click()
 
 }
 
-displayLog()
-
-function addPart(){
-
-let p={
-
-name:document.getElementById("part").value,
-qty:document.getElementById("qty").value,
-loc:document.getElementById("locationPart").value
-
-}
-
-let list=JSON.parse(localStorage.getItem("parts")||"[]")
-
-list.push(p)
-
-localStorage.setItem("parts",JSON.stringify(list))
-
-displayParts()
-
-}
-
-function displayParts(){
-
-let list=JSON.parse(localStorage.getItem("parts")||"[]")
-
-let html=""
-
-list.forEach(p=>{
-
-html+=`<p>${p.name}<br>
-Qty ${p.qty}<br>
-Location ${p.loc}</p>`
-
-})
-
-document.getElementById("partsList").innerHTML=html
-
-}
-
-displayParts()
-
-function checkAlerts(){
-
-let alerts=""
-
-if(hours%100<5){
-
-alerts+="Oil change due soon<br>"
-
-}
-
-if(hours%200<5){
-
-alerts+="Fuel filter due soon<br>"
-
-}
-
-document.getElementById("alerts").innerHTML=alerts
-
-}
-
-checkAlerts()
-
-function exportReport(){
-
-let log=JSON.parse(localStorage.getItem("log")||"[]")
-
-let report="Salt Whistle Maintenance Report\n\n"
-
-log.forEach(e=>{
-
-report+=`${e.date} | ${e.hours} hrs\n`
-report+=`${e.work}\n`
-report+=`${e.location} | ${e.mechanic}\n`
-report+=`${e.notes}\n\n`
-
-})
-
-alert(report)
-
-}
+showDashboard()
 
 </script>
 
