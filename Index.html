@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salt Whistle Logbook</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0c1d2a;
+color:white;
+margin:0;
+text-align:center;
+}
+
+header{
+background:#102c40;
+padding:18px;
+font-size:26px;
+font-weight:bold;
+}
+
+button{
+width:90%;
+padding:15px;
+margin:8px;
+font-size:18px;
+border-radius:10px;
+border:none;
+background:#2e6fa3;
+color:white;
+}
+
+.card{
+background:#13364d;
+margin:12px;
+padding:15px;
+border-radius:10px;
+}
+
+.section{
+display:none;
+}
+
+input{
+width:80%;
+padding:10px;
+margin:5px;
+border-radius:6px;
+border:none;
+}
+
+textarea{
+width:80%;
+padding:10px;
+margin:5px;
+border-radius:6px;
+border:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>⚓ Salt Whistle Logbook</header>
+
+<div class="card">
+
+2003 Catalina 34 MKII<br>
+Hull ID CYTP1651B303<br>
+Owners Rob Simonds & Dawn Wilson<br><br>
+
+Engine: Universal M35B<br>
+Hours: <span id="hours"></span>
+
+</div>
+
+<button onclick="show('dashboard')">Dashboard</button>
+<button onclick="show('maintenance')">Maintenance</button>
+<button onclick="show('parts')">Spare Parts</button>
+<button onclick="show('systems')">Systems</button>
+<button onclick="show('reports')">Reports</button>
+
+<div id="dashboard" class="section">
+
+<div class="card">
+
+<h3>Engine Hour Tracker</h3>
+
+<button onclick="addHours(.1)">+0.1 hr</button>
+<button onclick="addHours(1)">+1 hr</button>
+<button onclick="addHours(5)">+5 hr</button>
+
+</div>
+
+<div class="card">
+
+<h3>Maintenance Alerts</h3>
+
+<div id="alerts"></div>
+
+</div>
+
+</div>
+
+<div id="maintenance" class="section">
+
+<div class="card">
+
+<h3>Add Maintenance Entry</h3>
+
+<input id="work" placeholder="Work performed"><br>
+<input id="location" placeholder="Location"><br>
+<input id="mechanic" placeholder="Mechanic"><br>
+<textarea id="notes" placeholder="Notes"></textarea>
+
+<button onclick="addMaintenance()">Save Entry</button>
+
+</div>
+
+<div class="card">
+
+<h3>Maintenance Log</h3>
+
+<div id="log"></div>
+
+</div>
+
+</div>
+
+<div id="parts" class="section">
+
+<div class="card">
+
+<h3>Add Spare Part</h3>
+
+<input id="part" placeholder="Part name"><br>
+<input id="qty" placeholder="Quantity"><br>
+<input id="locationPart" placeholder="Storage location"><br>
+
+<button onclick="addPart()">Add</button>
+
+</div>
+
+<div class="card">
+
+<h3>Inventory</h3>
+
+<div id="partsList"></div>
+
+</div>
+
+</div>
+
+<div id="systems" class="section">
+
+<div class="card">
+
+<h3>Engine</h3>
+
+Universal M35B<br>
+Oil Filter Baldwin B179<br>
+Fuel Filter Baldwin BF940
+
+</div>
+
+<div class="card">
+
+<h3>Electrical</h3>
+
+2x 200W Solar Panels<br>
+Victron SmartSolar MPPT 100/30<br>
+Balmar XT-DT-170-J10 Alternator<br>
+Wakespeed WS500 Regulator<br>
+2000W Inverter
+
+</div>
+
+<div class="card">
+
+<h3>Plumbing</h3>
+
+Raritan PHII Compact Head<br>
+Shurflo 3200 Macerator<br>
+Jabsco Par-Max 3 Water Pump
+
+</div>
+
+</div>
+
+<div id="reports" class="section">
+
+<div class="card">
+
+<h3>Maintenance Report</h3>
+
+<button onclick="exportReport()">Generate Report</button>
+
+</div>
+
+</div>
+
+<script>
+
+let hours = localStorage.getItem("hours") || 2013
+document.getElementById("hours").innerText = hours
+
+function addHours(h){
+
+hours = parseFloat(hours)+h
+localStorage.setItem("hours",hours)
+
+document.getElementById("hours").innerText=hours.toFixed(1)
+
+checkAlerts()
+
+}
+
+function show(section){
+
+document.querySelectorAll(".section")
+.forEach(s=>s.style.display="none")
+
+document.getElementById(section).style.display="block"
+
+}
+
+show("dashboard")
+
+function addMaintenance(){
+
+let entry={
+
+date:new Date().toLocaleDateString(),
+hours:hours,
+work:document.getElementById("work").value,
+location:document.getElementById("location").value,
+mechanic:document.getElementById("mechanic").value,
+notes:document.getElementById("notes").value
+
+}
+
+let log=JSON.parse(localStorage.getItem("log")||"[]")
+
+log.unshift(entry)
+
+localStorage.setItem("log",JSON.stringify(log))
+
+displayLog()
+
+}
+
+function displayLog(){
+
+let log=JSON.parse(localStorage.getItem("log")||"[]")
+
+let html=""
+
+log.forEach(e=>{
+
+html+=`<p><b>${e.date}</b> | ${e.hours} hrs<br>
+${e.work}<br>
+${e.location} | ${e.mechanic}<br>
+${e.notes}</p>`
+
+})
+
+document.getElementById("log").innerHTML=html
+
+}
+
+displayLog()
+
+function addPart(){
+
+let p={
+
+name:document.getElementById("part").value,
+qty:document.getElementById("qty").value,
+loc:document.getElementById("locationPart").value
+
+}
+
+let list=JSON.parse(localStorage.getItem("parts")||"[]")
+
+list.push(p)
+
+localStorage.setItem("parts",JSON.stringify(list))
+
+displayParts()
+
+}
+
+function displayParts(){
+
+let list=JSON.parse(localStorage.getItem("parts")||"[]")
+
+let html=""
+
+list.forEach(p=>{
+
+html+=`<p>${p.name}<br>
+Qty ${p.qty}<br>
+Location ${p.loc}</p>`
+
+})
+
+document.getElementById("partsList").innerHTML=html
+
+}
+
+displayParts()
+
+function checkAlerts(){
+
+let alerts=""
+
+if(hours%100<5){
+
+alerts+="Oil change due soon<br>"
+
+}
+
+if(hours%200<5){
+
+alerts+="Fuel filter due soon<br>"
+
+}
+
+document.getElementById("alerts").innerHTML=alerts
+
+}
+
+checkAlerts()
+
+function exportReport(){
+
+let log=JSON.parse(localStorage.getItem("log")||"[]")
+
+let report="Salt Whistle Maintenance Report\n\n"
+
+log.forEach(e=>{
+
+report+=`${e.date} | ${e.hours} hrs\n`
+report+=`${e.work}\n`
+report+=`${e.location} | ${e.mechanic}\n`
+report+=`${e.notes}\n\n`
+
+})
+
+alert(report)
+
+}
+
+</script>
+
+</body>
+</html>
